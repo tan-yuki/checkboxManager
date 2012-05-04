@@ -1,0 +1,67 @@
+li {
+	list-style: none;
+	padding: 5px;
+}
+
+ul {
+	clear: both;
+	padding-top: 10px;
+}
+
+ul.level1Wrapper li {
+	float: left;
+}
+ul.level2Wrapper li {
+	float: left;
+}
+
+ul.level34Wrapper > li {
+	width: 200px;
+	height: 30px;
+	clear: both;
+}
+
+ul.level34Wrapper dl {
+	clear: both;
+}
+
+ul.level34Wrapper ul {
+	float: left;
+	padding: 0px;
+	margin: 0px;
+}
+
+ul.level34Wrapper ul li {
+	float: left;
+}
+
+dl {
+	width: 300px;
+}
+
+dt {
+	float: left;
+	padding-left: 0px;
+}
+
+dd {
+	height: 20px;
+	float: left;
+}
+
+
+.group1 {
+	background-color: red;
+}
+
+.group2 {
+	background-color: blue;
+}
+
+.group3 {
+	background-color: yellow;
+}
+
+.group4 {
+	background-color: green;
+}
