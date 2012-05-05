@@ -8,7 +8,12 @@ $(document).ready(function(){
 
 		parentLevel : null,
 
-		getSiblings : function(level) {
+		identity : null,
+
+		/**
+		 * Get all same level
+		 */
+		_getSiblings : function(level) {
 			if (! level instanceof Level) {
 				return null;
 			}
@@ -23,15 +28,17 @@ $(document).ready(function(){
 				return null;
 			}
 			return siblings;
-		
 		},
 
-		getNeighborsBy : function(level, target) {
+		/**
+		 * Get all same level and group
+		 */
+		_getNeighborsBy : function(level, target) {
 			if(! level) {
 				return null;
 			}
 
-			var siblings = this.getSiblings(level);
+			var siblings = this._getSiblings(level);
 
 			var group = this.getGroupOf(target);
 			if(group) {
@@ -40,22 +47,25 @@ $(document).ready(function(){
 				});
 			}
 			return siblings;
-		
 		},
 
-		getChildren : function(target) {
-			return this.getNeighborsBy(this.childLevel, target);
+		getSyncNeighborsBy : function(target) {
+			return this._getNeighborsBy(this, target);
 		},
 
-		getParent : function(target) {
-			return this.getNeighborsBy(this.parentLevel, target);
+		getSyncParentBy : function(target) {
+			return this._getNeighborsBy(this.parentLevel, target);
+		},
+
+		getSyncChildrenBy : function(target) {
+			return this._getNeighborsBy(this.childLevel, target);
 		},
 
 		click : function(target) {
-			var children = this.getChildren(target);
+			var children = this.getSyncChildrenBy(target);
 			if(children) {
 				children = children.filter(function(){
-					if (manager.doCheck) {
+					if (manager.doCheck()) {
 						// OFF -> ON
 						return  ! $(this).attr("checked");
 					} else {
@@ -73,35 +83,39 @@ $(document).ready(function(){
 			this.sync(target);
 		},
 
+
 		sync : function(target) {
-			var parent = this.getParent(target);
+			var parent = this.getSyncParentBy(target);
 			if(! parent || parent.length === 0) {
 				return false;
 			}
 
-			var neighbors = this.getNeighborsBy(this, target);
-			var changeStatus = true;
-			neighbors.each(function(){
-				if(manager.doCheck) {
-					// ON
-					if(! $(this).attr("checked")) {
-						changeStatus = false;
-						return false;
+			var syncMembers = this.getSyncNeighborsBy(target);
+			if(syncMembers) {
+				var changeStatus = true;
+				syncMembers.each(function(){
+					if(manager.doCheck()) {
+						// ON
+						if(! $(this).attr("checked")) {
+							changeStatus = false;
+							return false;
+						}
+					} else {
+						// OFF
+						if($(this).attr("checked")) {
+							changeStatus = false;
+							return false;
+						}
 					}
-				} else {
-					// OFF
-					if($(this).attr("checked")) {
-						changeStatus = false;
-						return false;
-					}
-				}
-			});
+				});
 
-			if (changeStatus) {
-				if (manager.doCheck) {
-					parent.attr("checked", "checked");
-				} else {
-					parent.attr("checked", false);
+				// if all sync member are all on or off
+				if (changeStatus) {
+					if (manager.doCheck()) {
+						parent.attr("checked", "checked");
+					} else {
+						parent.attr("checked", false);
+					}
 				}
 			}
 
@@ -119,19 +133,48 @@ $(document).ready(function(){
 
 	var Level1 = function(){};
 	Level1.prototype = $.extend({}, Level.prototype, {
-		label : "level1"
+		label : "level1",
+
+		identity : $("input.level1[type=checkbox]"),
+
+		getSyncNeighborsBy : function(target) {
+			return this.identity;
+		},
+		
+		getSyncParentBy : function(target) {
+			return null;
+		},
+		
+		getSyncChildrenBy : function(target) {
+			return this.childLevel.identity;
+		},
+
+		sync : function(target) {
+			return false;
+		}
 	});
 
 	var Level2 = function(){};
 	Level2.prototype = $.extend({}, Level.prototype, {
-		label : "level2"
+		label : "level2",
+
+		identity : $("input.level2[type=checkbox]"),
+
+		getSyncParentBy : function(target) {
+			return this.parentLevel.identity;
+		},
+
+		getSyncNeighborsBy : function(target) {
+			return this.identity;
+		}
+
 	});
 
 	var Level3 = function(){};
 	Level3.prototype = $.extend({}, Level.prototype, {
 		label : "level3",
 
-		getChildren : function(target) {
+		getSyncChildrenBy : function(target) {
 			return target
 					.parent("dt")
 					.next("dd")
@@ -143,24 +186,24 @@ $(document).ready(function(){
 	Level4.prototype = $.extend({}, Level.prototype, {
 		label : "level4",
 
-		getParent : function(target) {
+		getSyncParentBy : function(target) {
 			return target
 					.parents("dd")
 					.prev("dt")
 					.find("input."+ this.parentLevel.label + "[type=checkbox]");
 		},
 
+		getSyncChildrenBy : function() {
+			return null;
+		},
+
 		getGroupOf : function(target) {
 			return target.parents("dl").parent("li").attr("class");
 		},
 
-		getNeighborsBy : function(level, target) {
-			if(! level) {
-				return null;
-			}
-
+		getSyncNeighborsBy : function(target) {
 			return target.parents("ul").eq(0).find("input[type=checkbox]");
-		},
+		}
 	});
 
 	var EventManager = function(){
@@ -182,10 +225,14 @@ $(document).ready(function(){
 
 	EventManager.prototype = {
 
-		doCheck : true,
+		target : null,
 
-		manage : function (target) {
-			var level;
+		doCheck : function() {
+			return this.target.attr("checked");
+		},
+
+		getLevel : function(target) {
+			var level = null;
 			if(target.attr("class") === "level1") {
 				level = this.level1;
 			} else if (target.attr("class") === "level2") {
@@ -195,19 +242,23 @@ $(document).ready(function(){
 			} else if (target.attr("class") === "level4") {
 				level = this.level4;
 			}
-
-			level.click(target);
+			return level;
 		}
 	};
 
 	var manager = new EventManager();
 
 	var clickEvent = function(event, fromTrigger){
+
+		// set target
 		var target = $(event.target);
 		if(! fromTrigger) {
-			manager.doCheck = target.attr("checked");
+			manager.target = target;
 		}
-		manager.manage(target);
+
+		// click event
+		var level = manager.getLevel(target);
+		level.click(target);
 	}
 
 	$("input.level1").click(clickEvent);
