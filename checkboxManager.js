@@ -72,7 +72,7 @@ $(document).ready(function(){
 						// ON -> OFF
 						return  $(this).attr("checked");
 					}
-				})
+				});
 				
 				children.each(function(){
 					$(this).trigger("click", [true]);
@@ -81,6 +81,14 @@ $(document).ready(function(){
 
 			// sync checked or de-checked status
 			this.sync(target);
+
+			if (manager.doCheck()) {
+				target.attr("checked", "checked");
+			} else {
+				target.attr("checked", false);
+			}
+
+			return false;
 		},
 
 
@@ -243,13 +251,18 @@ $(document).ready(function(){
 
 		// set target
 		var target = $(event.target);
+
+		var raiseEvent = false;
 		if(! fromTrigger) {
 			manager.target = target;
+			raiseEvent = true;
 		}
 
 		// click event
 		var level = manager.getLevel(target);
 		level.click(target);
+
+		return raiseEvent;
 	}
 
 	$("input.level1").click(clickEvent);
