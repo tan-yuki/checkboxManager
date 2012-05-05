@@ -232,13 +232,13 @@ $(document).ready(function(){
 
 		getLevel : function(target) {
 			var level = null;
-			if(target.attr("class") === "level1") {
+			if(target.attr("class") === this.level1.label) {
 				level = this.level1;
-			} else if (target.attr("class") === "level2") {
+			} else if (target.attr("class") === this.level2.label) {
 				level = this.level2;
-			} else if (target.attr("class") === "level3") {
+			} else if (target.attr("class") === this.level3.label) {
 				level = this.level3;
-			} else if (target.attr("class") === "level4") {
+			} else if (target.attr("class") === this.level4.label) {
 				level = this.level4;
 			}
 			return level;
