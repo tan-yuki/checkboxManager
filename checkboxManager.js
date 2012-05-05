@@ -92,30 +92,21 @@ $(document).ready(function(){
 
 			var syncMembers = this.getSyncNeighborsBy(target);
 			if(syncMembers) {
-				var changeStatus = true;
+				var allChecked = true;
 				syncMembers.each(function(){
-					if(manager.doCheck()) {
-						// ON
-						if(! $(this).attr("checked")) {
-							changeStatus = false;
-							return false;
-						}
-					} else {
-						// OFF
-						if($(this).attr("checked")) {
-							changeStatus = false;
-							return false;
-						}
+					if(! $(this).attr("checked")) {
+						allChecked = false;
+						return false;
 					}
 				});
 
 				// if all sync member are all on or off
-				if (changeStatus) {
-					if (manager.doCheck()) {
-						parent.attr("checked", "checked");
-					} else {
-						parent.attr("checked", false);
-					}
+				if (manager.doCheck() && allChecked) {
+					// ON
+					parent.attr("checked", "checked");
+				} else if (! manager.doCheck() && ! allChecked) {
+					// OFF
+					parent.attr("checked", false);
 				}
 			}
 
